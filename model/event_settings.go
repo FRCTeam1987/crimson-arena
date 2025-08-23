@@ -51,7 +51,7 @@ func (database *Database) GetEventSettings() (*EventSettings, error) {
 		SelectionRound2Order:        "L",
 		SelectionRound3Order:        "",
 		TBADownloadEnabled:          true,
-		ApChannel:                   36,
+		ApChannel:                   157,
 		WarmupDurationSec:           game.MatchTiming.WarmupDurationSec,
 		AutoDurationSec:             game.MatchTiming.AutoDurationSec,
 		PauseDurationSec:            game.MatchTiming.PauseDurationSec,
