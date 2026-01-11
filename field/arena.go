@@ -7,15 +7,16 @@ package field
 
 import (
 	"fmt"
+	"log"
+	"reflect"
+	"time"
+
 	"github.com/FRCTeam1987/crimson-arena/bracket"
 	"github.com/FRCTeam1987/crimson-arena/game"
 	"github.com/FRCTeam1987/crimson-arena/model"
 	"github.com/FRCTeam1987/crimson-arena/network"
 	"github.com/FRCTeam1987/crimson-arena/partner"
 	"github.com/FRCTeam1987/crimson-arena/plc"
-	"log"
-	"reflect"
-	"time"
 )
 
 const (
@@ -959,4 +960,16 @@ func (arena *Arena) playSound(name string) {
 func (arena *Arena) runPeriodicTasks() {
 	arena.updateEarlyLateMessage()
 	arena.purgeDisconnectedDisplays()
+}
+
+// Send game data packet to all connected driver stations
+func (arena *Arena) sendGameDataPacket(data string) {
+	for _, allianceStation := range arena.AllianceStations {
+		if allianceStation.DsConn != nil && allianceStation.DsConn.DsLinked {
+			err := allianceStation.DsConn.sendGameDataPacket(data)
+			if err != nil {
+				log.Printf("Failed to send game data packet: %v", err)
+			}
+		}
+	}
 }
