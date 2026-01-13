@@ -530,8 +530,8 @@ func (arena *Arena) Update() {
 	case TeleopPeriod:
 		auto = false
 		enabled = true
-		if matchTimeSec >= (game.GetDurationToTeleopStart().Seconds()+3) && !arena.hasSentGameSpecificData2026 {
-			// For 2026, send updated game-specific data to the driver stations a few seconds into teleop.
+		if !arena.hasSentGameSpecificData2026 {
+			// For 2026, send updated game-specific data to the driver stations at the start of teleop
 			arena.sendGameSpecificDataPacket()
 		}
 		if matchTimeSec >= game.GetDurationToTeleopEnd().Seconds() {
