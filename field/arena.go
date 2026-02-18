@@ -7,15 +7,17 @@ package field
 
 import (
 	"fmt"
+	"log"
+	"math/rand"
+	"reflect"
+	"time"
+
 	"github.com/FRCTeam1987/crimson-arena/bracket"
 	"github.com/FRCTeam1987/crimson-arena/game"
 	"github.com/FRCTeam1987/crimson-arena/model"
 	"github.com/FRCTeam1987/crimson-arena/network"
 	"github.com/FRCTeam1987/crimson-arena/partner"
 	"github.com/FRCTeam1987/crimson-arena/plc"
-	"log"
-	"reflect"
-	"time"
 )
 
 const (
@@ -59,29 +61,30 @@ type Arena struct {
 	Displays         map[string]*Display
 	ArenaNotifiers
 	MatchState
-	lastMatchState             MatchState
-	CurrentMatch               *model.Match
-	MatchStartTime             time.Time
-	LastMatchTimeSec           float64
-	RedScore                   *game.Score
-	BlueScore                  *game.Score
-	lastDsPacketTime           time.Time
-	lastPeriodicTaskTime       time.Time
-	EventStatus                EventStatus
-	FieldReset                 bool
-	AudienceDisplayMode        string
-	SavedMatch                 *model.Match
-	SavedMatchResult           *model.MatchResult
-	SavedRankings              game.Rankings
-	AllianceStationDisplayMode string
-	AllianceSelectionAlliances []model.Alliance
-	PlayoffBracket             *bracket.Bracket
-	LowerThird                 *model.LowerThird
-	ShowLowerThird             bool
-	MuteMatchSounds            bool
-	matchAborted               bool
-	soundsPlayed               map[*game.MatchSound]struct{}
-	preloadedTeams             *[6]*model.Team
+	lastMatchState              MatchState
+	CurrentMatch                *model.Match
+	MatchStartTime              time.Time
+	LastMatchTimeSec            float64
+	RedScore                    *game.Score
+	BlueScore                   *game.Score
+	lastDsPacketTime            time.Time
+	lastPeriodicTaskTime        time.Time
+	EventStatus                 EventStatus
+	FieldReset                  bool
+	AudienceDisplayMode         string
+	SavedMatch                  *model.Match
+	SavedMatchResult            *model.MatchResult
+	SavedRankings               game.Rankings
+	AllianceStationDisplayMode  string
+	AllianceSelectionAlliances  []model.Alliance
+	PlayoffBracket              *bracket.Bracket
+	LowerThird                  *model.LowerThird
+	ShowLowerThird              bool
+	MuteMatchSounds             bool
+	matchAborted                bool
+	soundsPlayed                map[*game.MatchSound]struct{}
+	preloadedTeams              *[6]*model.Team
+	hasSentGameSpecificData2026 bool
 }
 
 type AllianceStation struct {
@@ -487,6 +490,7 @@ func (arena *Arena) Update() {
 		}
 		arena.Plc.ResetMatch()
 		arena.FieldLights.ResetWasAutoSet()
+		arena.hasSentGameSpecificData2026 = false
 	case WarmupPeriod:
 		auto = true
 		enabled = false
@@ -526,6 +530,10 @@ func (arena *Arena) Update() {
 	case TeleopPeriod:
 		auto = false
 		enabled = true
+		if !arena.hasSentGameSpecificData2026 {
+			// For 2026, send updated game-specific data to the driver stations at the start of teleop
+			arena.sendGameSpecificDataPacket()
+		}
 		if matchTimeSec >= game.GetDurationToTeleopEnd().Seconds() {
 			arena.MatchState = PostMatch
 			auto = false
@@ -959,4 +967,24 @@ func (arena *Arena) playSound(name string) {
 func (arena *Arena) runPeriodicTasks() {
 	arena.updateEarlyLateMessage()
 	arena.purgeDisconnectedDisplays()
+}
+
+// Send game data packet to all connected driver stations
+func (arena *Arena) sendGameSpecificDataPacket() {
+	gameData := "R"
+	if rand.Intn(2) == 0 {
+		gameData = "B"
+	}
+
+	for _, allianceStation := range arena.AllianceStations {
+		dsConn := allianceStation.DsConn
+		if dsConn != nil {
+			err := dsConn.sendGameDataPacket(gameData)
+			if err != nil {
+				log.Printf("Error sending game-specific data packet to Team %d: %v", dsConn.TeamId, err)
+			}
+		}
+	}
+	arena.lastDsPacketTime = time.Now()
+	arena.hasSentGameSpecificData2026 = true
 }
