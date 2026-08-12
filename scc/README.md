@@ -1,61 +1,31 @@
-SCC Installation and Configuration
-============
-The field uses three Raspberry Pi boxes to provide some of the functionality of a FIRST field.
-FIRST calls these SCC (Station Control Cabinets), so that is the name adopted here.
+# R7SCC Setup Guide
 
-These boxes monitor and report on the emergency stop buttons at each driver station, control
-field lights using FadeCandy light controllers, monitor the emergency stop button on the
-scoring table, and provide the scorekeeper / FTA with buttons to control the field lights.
+## What you'll need
 
-## Installation
+- 3x [Waveshare ESP32-S3-ETH-M](https://www.waveshare.com/esp32-s3-eth.htm?sku=34882)
+- 3x microSD cards (32GB or smaller, less than 1MB is used)
+- 3x Ethernet cables
+- USB-C cable
+- Chrome, Edge, or Brave browser
 
-1. Prepare a Raspberry Pi 3b+ or 4 with a default installation of Raspberry Pi OS.
-2. Connect the Raspberry Pi to the field Ethernet.  WiFi is not recommended for reliability.  The Pi must be connected to VLAN 100.
-3. (Optional but recommended) configure the Pi with a static IP.
-4. (Optional but recommended) enable SSH using rasp-config
-5. Add these two lines to the /boot/config.txt file:
+## Instructions
 
-`# Enable the power/activity LED`
+TODO: Add details on wiring the e-stop buttons
 
-`enable_uart=1`
-
-6. Install Node.js using the instructions here: https://www.w3schools.com/nodejs/nodejs_raspberrypi.asp
-7. Create a directory for the scc JavaScript files:
-
-`mkdir -p ~/scc/logs`
-
-8. Copy scc.js and launcher.sh to the ~/scc directory
-9. Install the required node modules using these commands:
-
-`cd ~/scc`
-
-`npm install ws onoff`
-
-10. Create the file in the /boot/scc that tells scc.js which box it is running on.  The file needs to contain one line with the word red, blue, or scoring.
-
-`sudo nano /boot/scc`
-
-11. Set the SCC JavaScript file to run automatically on boot by adding the following line to the CronTab file.  First, type:
-
-`sudo crontab -e`
-
-Then add this line to the bottom of the file
-
-`@reboot sh /home/pi/scc/launcher.sh >/home/pi/scc/logs/crontab 2>&1`
-
-12. If running field lights using FadeCandy, install it with instructions at https://learn.adafruit.com/1500-neopixel-led-curtain-with-raspberry-pi-fadecandy/fadecandy-server-setup
-
-13. (Optional) The fcserver.json is the configuration we use on our FadeCandy servers.
-
-## Field Hardware
-
-The Raspberry Pi's are placed inside custom cases that provide power and connection status LEDs as well as connection points for the emergency stop buttons.  CAD files for the cases are found here: https://cad.onshape.com/documents/43c157a9e200950f05fc2766/w/f1a71a60f29cc2de381a2c21/e/21e196e834ff44fcab3826cb
-
-### Emerency Stop Buttons
-
-We use these emergency stop buttons from Amazon:  https://amz.run/4Ob0
-
-We used Ethernet cables to attach the stop buttons to the Raspberry Pi.  Ethernet cables are designed for low signal attenuation over very long distances, are widely available, and have robust connectors.
-
-You can find panel mount Ethernet jacks here: https://amz.run/4Ob1
-These fit perfectly in the holes on the emergency stop button boxes.
+1. Format SD card as FAT32 with 512 byte sectors
+2. Create scc.cfg on the SD card and set the location:
+   ```env
+   # location of SCC. valid values are RED, BLUE, and SCORING
+   location=RED
+   ```
+3. Go to [ESPConnect](https://thelastoutpostworkshop.github.io/ESPConnect/)
+4. If using Brave browser, turn off Brave Shields
+5. Set the baud rate at the top to `921600`
+6. Plug the ESP32 into computer
+   - If the board doesn't connect, hold **BOOT**, press **RESET**, keep holding **BOOT**, then click **Connect** and release **BOOT** once it connects
+7. Go to the flash tab
+8. Flash the [firmware.factory.bin](#) with offset `0x0`
+9. Click disconnect and unplug the ESP32
+10. Connect the ESP32 to the FMS
+11. Plug in USB-C power supply
+12. Connect computer to FMS. Check the SCC status page at [10.0.100.5:8080](http://10.0.100.5:8080/)
